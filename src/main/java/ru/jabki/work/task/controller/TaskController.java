@@ -47,6 +47,7 @@ public class TaskController {
     }
 
     @GetMapping("/tasks")
+    @Operation(summary = "Получить список задач по статусу и/или исполнителю")
     public List<TaskResponse> findTasks(
             @RequestParam(required = false) TaskStatus status,
             @RequestParam(required = false) Long assignee){
