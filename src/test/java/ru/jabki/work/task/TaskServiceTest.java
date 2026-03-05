@@ -2,7 +2,6 @@ package ru.jabki.work.task;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -16,6 +15,7 @@ import ru.jabki.work.task.model.dto.TaskRequest;
 import ru.jabki.work.task.model.dto.TaskResponse;
 import ru.jabki.work.task.model.dto.TaskUpdateRequest;
 import ru.jabki.work.task.repository.TaskRepository;
+import ru.jabki.work.task.repository.mapper.TaskResponseMapper;
 import ru.jabki.work.task.service.TaskService;
 
 import java.time.LocalDate;
@@ -47,14 +47,18 @@ public class TaskServiceTest {
     @Mock
     private UserClient userClient;
 
+    @Mock
+    private TaskResponseMapper taskResponseMapper;
 
     @Test
     void testCreateTask_valid() {
         TaskRequest request = getTaskRequest("Title");
+        TaskResponse expectedResponse = getTaskResponse();
         Task task = getTask();
 
         when(userClient.existsById(anyLong())).thenReturn(true);
         when(taskRepository.insert(any(Task.class))).thenReturn(task);
+        when(taskResponseMapper.toTaskResponse(any())).thenReturn(expectedResponse);
 
         TaskResponse response = taskService.create(request);
 
@@ -85,17 +89,19 @@ public class TaskServiceTest {
     @Test
     void testUpdateTask_valid() {
         TaskUpdateRequest request = getTaskUpdateRequest();
+        TaskResponse expectedResponse = getTaskResponse();
         Task task = getTask();
 
         when(userClient.existsById(anyLong())).thenReturn(true);
         when(taskRepository.getById(1L)).thenReturn(task);
         when(taskRepository.update(any(Task.class))).thenReturn(task);
+        when(taskResponseMapper.toTaskResponse(any())).thenReturn(expectedResponse);
 
         TaskResponse response = taskService.update(request);
 
         assertNotNull(response);
         assertEquals(1L, response.id());
-        assertEquals("New Title", response.title());
+        assertEquals("Title", response.title());
         assertEquals(TaskStatus.DONE, response.status());
 
         //проверить что "checkUser" вызвался 2 раза
@@ -106,8 +112,10 @@ public class TaskServiceTest {
     @Test
     void testExistsById_NoThrowException_WhenTaskFound() {
         final Task task = getTask();
+        TaskResponse expectedResponse = getTaskResponse();
         TaskRequest request = getTaskRequest("Title");
         when(taskRepository.getById(1L)).thenReturn(task);
+        when(taskResponseMapper.toTaskResponse(any())).thenReturn(expectedResponse);
 
         TaskResponse response = taskService.getById(1L);
 
@@ -136,7 +144,6 @@ public class TaskServiceTest {
         return new TaskRequest(
                 title,
                 "Description",
-                //TaskStatus.TO_DO,
                 LocalDate.of(2026, 3, 10),
                 1L,
                 1L);
@@ -151,6 +158,19 @@ public class TaskServiceTest {
                 1L,
                 TaskStatus.DONE,
                 1L);
+    }
+
+    private TaskResponse getTaskResponse(){
+        return new TaskResponse(
+                1L,
+                "Title",
+                "Description",
+                TaskStatus.DONE,
+                now(),
+                1L,
+                1L,
+                LocalDateTime.now(),
+                LocalDateTime.now());
     }
 
     private Task getTask() {

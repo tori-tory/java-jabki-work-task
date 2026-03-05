@@ -15,7 +15,7 @@ public class UserClient {
 
     public boolean existsById(Long userId) {
         return restClient.get()
-                .uri("/user/exists/{id}", userId)
+                .uri("/api/v1/user/exists/{id}", userId)
                 .retrieve()
                 .body(Boolean.class);
     }
