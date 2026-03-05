@@ -24,6 +24,7 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
     private final UserClient userClient;
+    private final TaskResponseMapper taskResponseMapper;
 
     @Transactional
     public TaskResponse create(final TaskRequest taskRequest) {
@@ -31,15 +32,15 @@ public class TaskService {
         Task task = Task.builder()
                 .title(taskRequest.title())
                 .description(taskRequest.description())
-                .status(taskRequest.status())
-                .deadLine(taskRequest.dead_line())
+                .status(TaskStatus.TO_DO)
+                .deadLine(taskRequest.deadLine())
                 .assignee(taskRequest.assignee())
                 .author(taskRequest.author())
                 .build();
 
         Task newTask = taskRepository.insert(task);
 
-        return new TaskResponseMapper().toTaskResponse(newTask);
+        return taskResponseMapper.toTaskResponse(newTask);
     }
 
     @Transactional
@@ -52,10 +53,13 @@ public class TaskService {
         validateUpdate(taskUpdateRequest);
 
         task.setTitle(taskUpdateRequest.title());
+        task.setDescription(taskUpdateRequest.description());
+        task.setDeadLine(taskUpdateRequest.deadLine());
         task.setStatus(taskUpdateRequest.status());
+        task.setAssignee(taskUpdateRequest.assignee());
 
         Task updatedtask = taskRepository.update(task);
-        return new TaskResponseMapper().toTaskResponse(updatedtask);
+        return taskResponseMapper.toTaskResponse(updatedtask);
     }
 
     @Transactional(readOnly = true)
@@ -64,7 +68,7 @@ public class TaskService {
         if (task == null) {
             throw new NotFoundException(String.format("Задача с id %d не найдена", id));
         }
-        return new TaskResponseMapper().toTaskResponse(task);
+        return taskResponseMapper.toTaskResponse(task);
     }
 
     @Transactional(readOnly = true)
@@ -72,13 +76,12 @@ public class TaskService {
         List<Task> tasks = taskRepository.getTaskListByFilter(taskFilter);
 
         return tasks.stream()
-                .map(task -> new TaskResponseMapper().toTaskResponse(task))
-                .collect(Collectors.toList());
+                .map(task -> taskResponseMapper.toTaskResponse(task))
+                .toList();
     }
 
     private void validateCreate(final TaskRequest taskRequest){
         validateTitle(taskRequest.title());
-        validateStatus(taskRequest.status());
         checkUser(taskRequest.author(), "Автор");
         checkUser(taskRequest.assignee(), "Исполнитель");
     }
@@ -86,6 +89,7 @@ public class TaskService {
     private void validateUpdate(final TaskUpdateRequest taskUpdateRequest){
         validateTitle(taskUpdateRequest.title());
         validateStatus(taskUpdateRequest.status());
+        checkUser(taskUpdateRequest.assignee(), "Исполнитель");
         checkUser(taskUpdateRequest.editor(), "Редактор");
     }
 

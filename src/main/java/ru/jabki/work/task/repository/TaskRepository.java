@@ -29,15 +29,14 @@ public class TaskRepository {
 
     private static final String UPDATE = """
             UPDATE work_task.task
-            SET title = :title, status = :status, updated_at = now()
+            SET title = :title, 
+                description = :description,
+                status = :status,  
+                dead_line = :dead_line,
+                assignee_id = :assignee_id,
+                updated_at = now()
             WHERE id = :id
             RETURNING *
-            """;
-
-    private static final String LIST_BY_STATUS = """
-            """;
-
-    private static final String LIST_BY_ASSIGNEE = """
             """;
 
     private final TaskMapper taskMapper;

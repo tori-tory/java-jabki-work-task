@@ -98,8 +98,8 @@ public class TaskServiceTest {
         assertEquals("New Title", response.title());
         assertEquals(TaskStatus.DONE, response.status());
 
-        //проверить что "checkUser" вызвался 1 раз
-        verify(userClient, times(1)).existsById(anyLong());
+        //проверить что "checkUser" вызвался 2 раза
+        verify(userClient, times(2)).existsById(anyLong());
         verify(taskRepository, times(1)).update(any(Task.class));
     }
 
@@ -136,7 +136,7 @@ public class TaskServiceTest {
         return new TaskRequest(
                 title,
                 "Description",
-                TaskStatus.TO_DO,
+                //TaskStatus.TO_DO,
                 LocalDate.of(2026, 3, 10),
                 1L,
                 1L);
@@ -146,6 +146,9 @@ public class TaskServiceTest {
         return new TaskUpdateRequest(
                 1L,
                 "New Title",
+                "Description",
+                now(),
+                1L,
                 TaskStatus.DONE,
                 1L);
     }

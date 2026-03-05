@@ -23,4 +23,12 @@ public class ExceptionController {
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiError(false, e.getMessage()));
     }
+
+    @ExceptionHandler(TaskException.class)
+    public ResponseEntity<ApiError> handleBadRequest(TaskException e) {
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ApiError(false, e.getMessage()));
+    }
 }
