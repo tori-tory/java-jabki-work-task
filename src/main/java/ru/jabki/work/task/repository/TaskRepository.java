@@ -27,11 +27,20 @@ public class TaskRepository {
             AND status <> 'DELETE'
             """;
 
+    private static final String EXISTS_BY_ASSIGNEE_ID =  """
+            SELECT EXISTS (
+                SELECT 1
+                FROM work_task.task
+                WHERE assignee_id = :assignee_id
+                AND status not in ('DONE', 'DELETE')
+            )
+            """;
+
     private static final String UPDATE = """
             UPDATE work_task.task
-            SET title = :title, 
+            SET title = :title,
                 description = :description,
-                status = :status,  
+                status = :status,
                 dead_line = :dead_line,
                 assignee_id = :assignee_id,
                 updated_at = now()
@@ -46,12 +55,17 @@ public class TaskRepository {
         return jdbcTemplate.queryForObject(INSERT, taskToSql(task), taskMapper);
     }
 
-    public Task getById(final Long id) {
+    public Task getById(final Long id){
         try {
             return jdbcTemplate.queryForObject(GET_BY_ID, new MapSqlParameterSource("id", id), taskMapper);
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
+    }
+
+    public boolean existsByAssigneeId(final Long userId){
+        return Boolean.TRUE.equals(
+            jdbcTemplate.queryForObject(EXISTS_BY_ASSIGNEE_ID, new MapSqlParameterSource("assignee_id", userId), Boolean.class));
     }
 
     public Task update(final Task task){
@@ -81,7 +95,7 @@ public class TaskRepository {
         return jdbcTemplate.query(selectSql.toString(), params, taskMapper);
     }
 
-    private MapSqlParameterSource taskToSql(final Task task) {
+    private MapSqlParameterSource taskToSql(final Task task){
         final MapSqlParameterSource params = new MapSqlParameterSource();
 
         params.addValue("id", task.getId());
