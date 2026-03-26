@@ -31,7 +31,6 @@ public class EventRepository {
     }
 
     public List<Event> getByTask(final Long taskId){
-        System.out.printf("task= %s task/", taskId);
         String selectSql = """
                 SELECT e.id, e.task_id, e.editor_id, e.log_message, e.created_at
                 FROM work_task.task_event e
