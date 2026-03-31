@@ -1,3 +1,6 @@
 databaseChangeLog:
   - include:
       file: db/changelog/20260226_1805_init_work_task_table.sql
+
+  - include:
+        file: db/changelog/20260316_1805_init_status_change_table.sql

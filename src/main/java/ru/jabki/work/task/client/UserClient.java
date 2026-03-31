@@ -19,4 +19,11 @@ public class UserClient {
                 .retrieve()
                 .body(Boolean.class);
     }
+
+    public boolean isManager(Long userId) {
+        return restClient.get()
+                .uri("/api/v1/user/exists/manager/{id}", userId)
+                .retrieve()
+                .body(Boolean.class);
+    }
 }

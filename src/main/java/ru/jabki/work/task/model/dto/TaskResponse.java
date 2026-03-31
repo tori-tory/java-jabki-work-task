@@ -10,7 +10,7 @@ public record TaskResponse(
         String title,
         String description,
         TaskStatus status,
-        LocalDate dead_line,
+        LocalDate deadLine,
         Long author,
         Long assignee,
         LocalDateTime createdAt,
