@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.jabki.work.task.model.TaskStatus;
 import ru.jabki.work.task.model.dto.TaskFilter;
+import ru.jabki.work.task.model.dto.TaskReportParams;
+import ru.jabki.work.task.model.dto.TaskReportResponse;
 import ru.jabki.work.task.model.dto.TaskRequest;
 import ru.jabki.work.task.model.dto.TaskResponse;
 import ru.jabki.work.task.model.dto.TaskUpdateRequest;
@@ -59,5 +61,18 @@ public class TaskController {
             @RequestParam(required = false) Long assignee){
         TaskFilter filter = new TaskFilter(status, assignee);
         return taskService.getTaskListByFilter(filter);
+    }
+
+    @PostMapping("/tasks/by-assignees")
+    @Operation(summary = "Получить список задач по одному и более исполнителю")
+    public List<TaskResponse> getTasksByAssogneeList(@RequestBody List<Long> ids) {
+        return taskService.getTaskListByAssigneeIds(ids);
+    }
+
+    @PostMapping("/reports/by-assignees")
+    @Operation(summary = "Получить отчет по исполнителям за период")
+    public TaskReportResponse getReport(
+            @RequestBody TaskReportParams params) {
+        return taskService.taskReport(params);
     }
 }

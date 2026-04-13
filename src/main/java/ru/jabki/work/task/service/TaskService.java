@@ -9,16 +9,22 @@ import ru.jabki.work.task.exception.TaskException;
 import ru.jabki.work.task.model.Task;
 import ru.jabki.work.task.model.TaskStatus;
 import ru.jabki.work.task.model.dto.EventRequest;
+import ru.jabki.work.task.model.dto.TaskByAssignee;
 import ru.jabki.work.task.model.dto.TaskFilter;
+import ru.jabki.work.task.model.dto.TaskReportParams;
+import ru.jabki.work.task.model.dto.TaskReportResponse;
 import ru.jabki.work.task.model.dto.TaskRequest;
 import ru.jabki.work.task.model.dto.TaskResponse;
 import ru.jabki.work.task.model.dto.TaskUpdateRequest;
+import ru.jabki.work.task.model.dto.TaskByStatus;
 import ru.jabki.work.task.repository.TaskRepository;
 import ru.jabki.work.task.repository.mapper.TaskResponseMapper;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -125,6 +131,37 @@ public class TaskService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<TaskResponse> getTaskListByAssigneeIds(final List<Long> ids) {
+        List<Task> tasks = taskRepository.findByAssignees(ids);
+        return tasks.stream()
+                .map(task -> taskResponseMapper.toTaskResponse(task))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public TaskReportResponse taskReport(final TaskReportParams params) {
+        validatePeriod(params);
+        long total = taskRepository.totalByAssignees(params);
+        double avg = taskRepository.avgDays(params);
+
+        List<TaskByStatus> statusRows = taskRepository.taskStatusByAssignees(params);
+        List<TaskByAssignee> assigneeRows = taskRepository.taskByAssignees(params);
+
+        Map<TaskStatus, Long> byStatus = statusRows.stream()
+                .collect(Collectors.toMap(
+                        TaskByStatus::status,
+                        TaskByStatus::count)
+                );
+        Map<Long, Long> byAssignee = assigneeRows.stream()
+                .collect(Collectors.toMap(
+                        TaskByAssignee::assignee_id,
+                        TaskByAssignee::count)
+                );
+
+        return new TaskReportResponse(total, byStatus, byAssignee, avg);
+    }
+
     private void validateCreate(final TaskRequest taskRequest){
         validateTitle(taskRequest.title());
         checkUser(taskRequest.author(), "Автор");
@@ -173,6 +210,15 @@ public class TaskService {
         }
         if (!userClient.existsById(id)) {
             throw new NotFoundException(String.format("Значение %s с id %s не найдено",field, id));
+        }
+    }
+
+    private void validatePeriod(TaskReportParams params) {
+        if ((params.dateFrom() == null) || (params.dateTo() == null)) {
+            throw new TaskException("Задайте корректный период поиска");
+        }
+        if (params.dateFrom().isAfter(params.dateTo())) {
+            throw new TaskException("Дата начала не может быть позже даты окончания");
         }
     }
 }
