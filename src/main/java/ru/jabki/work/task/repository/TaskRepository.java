@@ -6,15 +6,11 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.jabki.work.task.model.Task;
-import ru.jabki.work.task.model.dto.TaskByAssignee;
 import ru.jabki.work.task.model.dto.TaskFilter;
-import ru.jabki.work.task.model.dto.TaskByStatus;
-import ru.jabki.work.task.model.dto.TaskReportParams;
 import ru.jabki.work.task.repository.mapper.TaskByAssigneeMapper;
 import ru.jabki.work.task.repository.mapper.TaskByStatusMapper;
 import ru.jabki.work.task.repository.mapper.TaskMapper;
 
-import java.util.Collections;
 import java.util.List;
 
 @Repository
@@ -117,66 +113,6 @@ public class TaskRepository {
         }
     }
 
-    public Long totalByAssignees(TaskReportParams params) {
-        String sql = """
-            SELECT count(*)
-            FROM work_task.task
-            WHERE assignee_id IN (:ids)
-            AND status NOT IN ('DELETE')
-            AND dead_line BETWEEN :date_from AND :date_to
-            """;
-        return jdbcTemplate.queryForObject(sql, reportParamsToSql(params), Long.class);
-    }
-
-    public Double avgDays(TaskReportParams params) {
-        String sql = """
-            SELECT COALESCE(ROUND(
-                    (AVG(EXTRACT(EPOCH FROM (updated_at - created_at))) / 86400)::numeric,
-                    3
-                ), 0) AS avg_days
-            FROM work_task.task
-            WHERE status = 'DONE'
-            AND assignee_id IN (:ids)
-            AND dead_line BETWEEN :date_from AND :date_to
-            """;
-        return jdbcTemplate.queryForObject(sql, reportParamsToSql(params), Double.class);
-    }
-
-    public List<TaskByStatus> taskStatusByAssignees(TaskReportParams params) {
-        String sql = """
-            SELECT status, count(*) AS task_count
-            FROM work_task.task
-            WHERE assignee_id IN (:ids)
-            AND status NOT IN ('DELETE')
-            AND dead_line BETWEEN :date_from AND :date_to
-            GROUP BY status
-            """;
-        try {
-            return jdbcTemplate.query(sql, reportParamsToSql(params), taskByStatusMapper);
-        } catch (EmptyResultDataAccessException e) {
-            return Collections.emptyList();
-        }
-    }
-
-    public List<TaskByAssignee> taskByAssignees(TaskReportParams params) {
-        if (params.assigneeIds() == null || params.assigneeIds().isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        String sql = """
-                SELECT ids.assignee_id, COUNT(t.id) AS task_count
-                FROM unnest(CAST(:idsArray AS BIGINT[])) AS ids(assignee_id)
-                LEFT JOIN work_task.task t ON t.assignee_id = ids.assignee_id 
-                        AND dead_line BETWEEN :date_from AND :date_to
-                GROUP BY ids.assignee_id;
-                """;
-        try {
-            return jdbcTemplate.query(sql, reportParamsToSql(params), taskByAssigneeMapper);
-        } catch (EmptyResultDataAccessException e) {
-            return Collections.emptyList();
-        }
-    }
-
     private MapSqlParameterSource taskToSql(final Task task){
         final MapSqlParameterSource params = new MapSqlParameterSource();
 
@@ -187,17 +123,6 @@ public class TaskRepository {
         params.addValue("dead_line", task.getDeadLine());
         params.addValue("author_id", task.getAuthor());
         params.addValue("assignee_id", task.getAssignee());
-        return params;
-    }
-
-    private MapSqlParameterSource reportParamsToSql(final TaskReportParams reportParams){
-        final MapSqlParameterSource params = new MapSqlParameterSource();
-        Long[] idsArray = reportParams.assigneeIds().toArray(new Long[0]);
-
-        params.addValue("idsArray", idsArray);
-        params.addValue("ids", reportParams.assigneeIds());
-        params.addValue("date_from", reportParams.dateFrom());
-        params.addValue("date_to", reportParams.dateTo());
         return params;
     }
 }
