@@ -125,6 +125,14 @@ public class TaskService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<TaskResponse> getTaskListByAssigneeIds(final List<Long> ids) {
+        List<Task> tasks = taskRepository.findByAssignees(ids);
+        return tasks.stream()
+                .map(task -> taskResponseMapper.toTaskResponse(task))
+                .toList();
+    }
+
     private void validateCreate(final TaskRequest taskRequest){
         validateTitle(taskRequest.title());
         checkUser(taskRequest.author(), "Автор");

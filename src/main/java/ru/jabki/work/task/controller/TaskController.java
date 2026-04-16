@@ -60,4 +60,10 @@ public class TaskController {
         TaskFilter filter = new TaskFilter(status, assignee);
         return taskService.getTaskListByFilter(filter);
     }
+
+    @PostMapping("/tasks/by-assignees")
+    @Operation(summary = "Получить список задач по одному и более исполнителю")
+    public List<TaskResponse> getTasksByAssogneeList(@RequestBody List<Long> ids) {
+        return taskService.getTaskListByAssigneeIds(ids);
+    }
 }

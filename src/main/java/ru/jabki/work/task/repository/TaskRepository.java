@@ -7,6 +7,8 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.jabki.work.task.model.Task;
 import ru.jabki.work.task.model.dto.TaskFilter;
+import ru.jabki.work.task.repository.mapper.TaskByAssigneeMapper;
+import ru.jabki.work.task.repository.mapper.TaskByStatusMapper;
 import ru.jabki.work.task.repository.mapper.TaskMapper;
 
 import java.util.List;
@@ -49,6 +51,8 @@ public class TaskRepository {
             """;
 
     private final TaskMapper taskMapper;
+    private final TaskByStatusMapper taskByStatusMapper;
+    private final TaskByAssigneeMapper taskByAssigneeMapper;
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
     public Task insert(final Task task){
@@ -93,6 +97,20 @@ public class TaskRepository {
         }
 
         return jdbcTemplate.query(selectSql.toString(), params, taskMapper);
+    }
+
+    public List<Task> findByAssignees(List<Long> ids) {
+        String sql = """
+            SELECT *
+            FROM work_task.task
+            WHERE assignee_id IN (:ids)
+            AND status NOT IN ('DELETE')
+            """;
+        try {
+            return jdbcTemplate.query(sql, new MapSqlParameterSource("ids", ids), taskMapper);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
     }
 
     private MapSqlParameterSource taskToSql(final Task task){
